@@ -1,4 +1,4 @@
-pq <- read.csv("~/Desktop/Projects/veg_data_code/veg_data_code/dfrb_point_quarter.csv") #import wide point-qaurter data
+pq <- read.csv("~/Desktop/Projects/veg_data_code/veg_data_code/dfrb_point_quarter.csv") #import wide point-quarter data
 
 library(tidyverse)
 library(tidyr)
@@ -9,7 +9,7 @@ library(dplyr)
 pq <- pq %>%
   select(-starts_with("Area"))  
 
-
+current_names<-colnames(pq)
 
 # Identify tree columns that match the pattern
 tree_to_rename <- grep("^Center\\.tree\\.|^Rand\\.tree\\.", current_names, value = TRUE)
@@ -42,9 +42,7 @@ names(pq)[colnames(pq) %in% dist_to_rename] <- new_dist_names
 
 
 
-
-
-
+pq$UniqueID<-paste(pq$Point.ID, "_", pq$Year)
 
 
 # Define column patterns for Tree, DBH, and Distance
@@ -66,7 +64,7 @@ long_data_trees <- pq %>%
     values_to = "Tree"
   ) %>%
   mutate(Tree_Index = extract_index(Tree_Type)) %>%
-  select(Point.ID, Tree_Index, Tree)
+  select(UniqueID,Point.ID, Year, Block, Tree_Index, Tree)
 
 # Reshape the DBH columns into long format
 long_data_dbh <- pq %>%
@@ -76,7 +74,7 @@ long_data_dbh <- pq %>%
     values_to = "DBH"
   ) %>%
   mutate(DBH_Index = extract_index(DBH_Type)) %>%
-  select(Point.ID, DBH_Index, DBH)
+  select(UniqueID,Point.ID, Year, Block, DBH_Index, DBH)
 
 # Reshape the Distance columns into long format
 long_data_dist <- pq %>%
@@ -86,16 +84,17 @@ long_data_dist <- pq %>%
     values_to = "Distance"
   ) %>%
   mutate(Dist_Index = extract_index(Dist_Type)) %>%
-  select(Point.ID, Dist_Index, Distance)
+  select(UniqueID,Point.ID, Year, Block, Dist_Index, Distance)
 
 # Combine all long data frames by matching indexes
 combined_data <- long_data_trees %>%
-  left_join(long_data_dbh, by = c("Point.ID", "Tree_Index" = "DBH_Index")) %>%
-  left_join(long_data_dist, by = c("Point.ID", "Tree_Index" = "Dist_Index")) %>%
-  filter(!is.na(Tree)) %>%  # Remove rows where Tree is NA (indicating no valid tree data)
-  select(Point.ID, Tree, DBH, Distance) %>%
+  left_join(long_data_dbh, by = c("UniqueID", "Tree_Index" = "DBH_Index")) %>%
+  left_join(long_data_dist, by = c("UniqueID", "Tree_Index" = "Dist_Index")) %>%
+  #filter(!is.na(Tree)) %>%  # Remove rows where Tree is NA (indicating no valid tree data)
+  select(UniqueID,Point.ID, Year, Block, Tree, DBH, Distance) %>%
   distinct()
 
+View(combined_data) # just make sure everything looks alright
 
-View(combined_data)
+
 
